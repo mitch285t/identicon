@@ -9,14 +9,47 @@ This program sets up a identicon or default profile image for the input you give
     |> hash_input
     |> pick_color
     |> build_grid
+    |> filter_odd_squares
+    |> build_pixel_map
+    |> draw_image
+    
   end 
+
+  def draw_image(%Identicon.Image{color: color, pixel_map: pixel_map}) do
+    
+  end
+
+  def build_pixel_map(%Identicon.Image{grid: grid} = image) do
+   pixel_map = Enum.map grid, fn({_code, index }) -> 
+      horizontal = rem(index, 5) * 50
+      vertical = div(index, 5) * 50
+      top_left = {horizontal, vertical}
+      bottom_right = {horizontal + 50, vertical + 50}
+
+      {top_left, bottom_right}
+    end
+    %Identicon.Image{image | pixel_map: pixel_map}
+  end
+
+  def filter_odd_squares(%Identicon.Image{grid: grid} = image) do
+    # this could also be written as Enum.filter(grid, fn(square) -> end)
+    Enum.filter grid, fn({code, _index}) -> 
+      rem(code, 2) == 0 
+  
+    end
+
+    %Identicon.Image{image | grid: grid}
+  end
 @doc """
 `build_grid` seperates the hex into sets of 3 and also calls the `mirror_row` function that adds two more values and mirrors the list. 
 """
   def build_grid(%Identicon.Image{hex: hex} = image) do 
-    hex 
+  grid = hex 
     |> Enum.chunk(3)
     |> Enum.map(&mirror_row/1)
+    |> List.flatten
+    |> Enum.with_index
+    %Identicon.Image{image | grid: grid}
     end
   
   def mirror_row(row) do
